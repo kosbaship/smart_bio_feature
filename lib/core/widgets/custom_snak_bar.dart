@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
 
 class CustomSnackBar {
-  final GlobalKey<ScaffoldState>? scaffoldKey;
-  final ScaffoldState? scaffoldState;
   final Key? key;
+  final BuildContext context;
 
-  CustomSnackBar({this.key, this.scaffoldKey, this.scaffoldState})
-      : assert(scaffoldState != null || scaffoldKey != null);
+  CustomSnackBar({this.key, required this.context});
 
   void showErrorSnackBar(final msg) {
     showSnackBar(text: "Error: $msg", color: Colors.red[400]);
-  }
-
-  ScaffoldState? get _state {
-    return scaffoldKey == null ? scaffoldState : scaffoldKey?.currentState;
   }
 
   void showLoadingSnackBar() {
@@ -30,7 +24,7 @@ class CustomSnackBar {
       backgroundColor: Colors.green[400],
       duration: const Duration(minutes: 1),
     );
-    _state?.showSnackBar(snackBar);
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   void showSnackBar({
@@ -51,16 +45,17 @@ class CustomSnackBar {
       duration: duration,
       action: action
           ? SnackBarAction(
-        label: "Clear",
-        textColor: Colors.black,
-        onPressed: () => _state?.removeCurrentSnackBar(),
-      )
+              label: "Clear",
+              textColor: Colors.black,
+              onPressed: () =>
+                  ScaffoldMessenger.of(context).removeCurrentSnackBar(),
+            )
           : null,
     );
-    _state?.showSnackBar(snackBar);
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   void hideAll() {
-    _state?.removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
   }
 }

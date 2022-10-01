@@ -124,8 +124,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    _snackBar =
-        CustomSnackBar(key: const Key("snackbar"), scaffoldKey: _scaffoldKey);
+    _snackBar = CustomSnackBar(key: const Key("snackbar"), context: context);
     return GestureDetector(
       onTap: () => FocusScope.of(context).requestFocus(_viewNode),
       child: Scaffold(

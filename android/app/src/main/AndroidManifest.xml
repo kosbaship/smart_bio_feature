@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kosbaship.feature_oriented">
-   <application
+
+
+    <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
         android:label="feature_oriented"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

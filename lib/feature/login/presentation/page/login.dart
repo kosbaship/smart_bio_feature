@@ -1,6 +1,7 @@
 import 'package:feature_oriented/app/injection_container.dart';
 import 'package:feature_oriented/core/utils/compass.dart';
 import 'package:feature_oriented/core/utils/constants.dart';
+import 'package:feature_oriented/core/utils/logger.dart';
 import 'package:feature_oriented/core/utils/theme.dart';
 import 'package:feature_oriented/core/widgets/custom_snak_bar.dart';
 import 'package:feature_oriented/feature/home/presentation/page/home.dart';
@@ -8,6 +9,8 @@ import 'package:feature_oriented/feature/login/presentation/cubit/login_cubit.da
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:local_auth/error_codes.dart' as auth_error;
+import 'package:local_auth/local_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -28,12 +31,85 @@ class _LoginPageState extends State<LoginPage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   CustomSnackBar? _snackBar;
-  late bool _obscureText;
+
+  /// BioMetric
+  LocalAuthentication localAuth = LocalAuthentication();
+  String authorized = "Not Authorized";
+
+  Future<bool?> checkAuthenticateAvailability() async {
+    try {
+      LoggerUtils().makeLoggerInfo("canCheckBiometrics " +
+          (await localAuth.canCheckBiometrics).toString());
+      LoggerUtils().makeLoggerInfo("isDeviceSupported " +
+          (await localAuth.isDeviceSupported()).toString());
+
+      final isCheckingAvailable = await localAuth.canCheckBiometrics;
+      final isDeviceSupported = await localAuth.isDeviceSupported();
+      return isCheckingAvailable && isDeviceSupported;
+    } on PlatformException catch (e) {
+      LoggerUtils().makeLoggerError(e.toString());
+    }
+    setState(() {});
+  }
+
+  Future<List<BiometricType>?> _getAvailableBiometrics() async {
+    try {
+      LoggerUtils().makeLoggerInfo(
+          (await localAuth.getAvailableBiometrics()).toString());
+      return await localAuth.getAvailableBiometrics();
+    } on PlatformException catch (e) {
+      LoggerUtils().makeLoggerError(e.toString());
+    }
+    setState(() {});
+  }
+
+  Future<void> _authenticate() async {
+    bool authenticated = false;
+    try {
+      authenticated = await localAuth.authenticate(
+          localizedReason: "Scan your finger print to authenticate",
+          useErrorDialogs: false,
+          stickyAuth: false,
+          biometricOnly: true);
+    } on PlatformException catch (e) {
+      switch (e.code) {
+        case auth_error.notEnrolled:
+          LoggerUtils().makeLoggerError(
+              "You Have not enrolled any fingerprints on this device.");
+          break;
+        case auth_error.passcodeNotSet:
+          LoggerUtils().makeLoggerError(
+              "You Have not enrolled any fingerprints on this device.");
+          break;
+        case auth_error.notAvailable:
+          LoggerUtils().makeLoggerError(
+              "This device does not have a Touch ID/fingerprint scanner");
+          break;
+        case auth_error.otherOperatingSystem:
+          LoggerUtils().makeLoggerError("This is not iOS or Android device");
+          break;
+        case auth_error.lockedOut:
+          LoggerUtils().makeLoggerError(
+              "Lock out for a few seconds due to too many attempts");
+          break;
+        case auth_error.permanentlyLockedOut:
+          LoggerUtils().makeLoggerError("Disabled due to too many lock outs");
+          break;
+      }
+    }
+    if (!mounted) return;
+
+    setState(() {
+      authorized =
+          authenticated ? "Authorized success" : "Failed to authenticate";
+    });
+  }
 
   @override
   void initState() {
+    checkAuthenticateAvailability();
+    _getAvailableBiometrics();
     super.initState();
-    _obscureText = true;
   }
 
   @override
@@ -87,6 +163,14 @@ class _LoginPageState extends State<LoginPage> {
                 height: 36,
                 child: _buildLoginButton(),
               ),
+              const Padding(
+                padding: EdgeInsets.only(top: 14),
+              ),
+              ElevatedButton(
+                onPressed: _authenticate,
+                child: const Text('Biometric Login'),
+              ),
+              Text("Current State: $authorized"),
               const Padding(
                 padding: EdgeInsets.only(top: 14),
               ),

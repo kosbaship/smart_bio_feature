@@ -34,6 +34,8 @@ dependencies:
   get: ^4.6.1
   # intl for translation
   intl: ^0.17.0
+  # local auth fro Biometric login
+  local_auth: ^1.1.10
 
 
 
